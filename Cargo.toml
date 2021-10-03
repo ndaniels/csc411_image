@@ -2,7 +2,9 @@
 name = "csc411_image"
 version = "0.1.0"
 edition = "2018"
-
+license = "MIT"
+authors = ["Noah Daniels <noah_daniels@uri.edu>", "Najib Ishaq <najib_ishaq@zoho.com>"]
+description = "A wrapper around the image crate, for CSC 411"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
