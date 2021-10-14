@@ -5,8 +5,8 @@ use image::codecs::pnm;
 use image::{DynamicImage, GenericImageView};
 
 use crate::pixel::Gray;
-use crate::pixel::Rgb;
 use crate::pixel::Pixel;
+use crate::pixel::Rgb;
 
 /// A struct containing a vector of `Pixel`s,
 /// a width, height, and denominator
@@ -30,7 +30,7 @@ impl Image {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdin` is used
-    
+
     pub fn read(filename: Option<&str>) -> Result<Self, String> {
         let mut raw_reader: Box<dyn BufRead> = match filename {
             None => Box::new(BufReader::new(io::stdin())),
@@ -54,9 +54,15 @@ impl Image {
                 .collect(),
             DynamicImage::ImageRgb8(_) => img
                 .pixels()
-                .map(|(_, _, p)| Pixel::Rgb(Rgb { red: p[0] as u16, green: p[1] as u16, blue: p[2] as u16 }))
-                .collect(),    
-            _ => return Err(format!("Unexpected image format"))
+                .map(|(_, _, p)| {
+                    Pixel::Rgb(Rgb {
+                        red: p[0] as u16,
+                        green: p[1] as u16,
+                        blue: p[2] as u16,
+                    })
+                })
+                .collect(),
+            _ => return Err(format!("Unexpected image format")),
         };
         Ok(Image {
             pixels,
