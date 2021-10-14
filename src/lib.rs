@@ -1,5 +1,7 @@
-pub mod image;
-pub mod pixel;
+mod image;
+mod pixel;
+pub use crate::image::Image;
+pub use crate::pixel::{Pixel, Gray, Rgb};
 
 #[cfg(test)]
 mod tests {
