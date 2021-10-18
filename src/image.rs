@@ -10,6 +10,7 @@ use crate::pixel::Rgb;
 
 /// A struct containing a vector of `Pixel`s,
 /// a width, height, and denominator
+#[derive(Clone)]
 pub struct Image {
     /// The pixel values in row-major order, as a vec of `Pixel`
     /// Each pixel value is a scaled integer (Gray) or set of
@@ -30,7 +31,6 @@ impl Image {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdin` is used
-
     pub fn read(filename: Option<&str>) -> Result<Self, String> {
         let mut raw_reader: Box<dyn BufRead> = match filename {
             None => Box::new(BufReader::new(io::stdin())),
@@ -62,7 +62,7 @@ impl Image {
                     })
                 })
                 .collect(),
-            _ => return Err(format!("Unexpected image format")),
+            _ => return Err("Unexpected image format".to_string()),
         };
         Ok(Image {
             pixels,
