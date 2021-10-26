@@ -83,5 +83,11 @@ impl Image {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
         // and apparently this should be wrapped in a BufWriter
+        // We can rely on pixels being in row-major order,
+        // and simply create a DynamicImage::ImageRgb8 whose
+        // pixels are the appropriate values.
+        // I do not believe we need to support writing of Pgm images,
+        // but it shouldn't be a hard extension
+        // (just pattern match on the type of the incoming pixels)
     }
 }
