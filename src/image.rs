@@ -71,4 +71,17 @@ impl Image {
             denominator: header.maximal_sample() as u16,
         })
     }
+
+    /// Writes an image to either a filename or stdout
+    ///
+    /// # Arguments
+    ///
+    /// * `filename`: a string containing a path to an image file,
+    ///                 or `None`, in which case `stdout` is used
+    pub fn write(&self, filename: Option<&str>) {
+        todo!();
+        // we don't want to rely on file-extension magic,
+        // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
+        // and apparently this should be wrapped in a BufWriter
+    }
 }
