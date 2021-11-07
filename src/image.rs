@@ -1,8 +1,6 @@
-use std::fs;
-use std::io::{self, BufRead, BufReader, Cursor};
-
 use image::codecs::pnm;
-use image::{DynamicImage, GenericImageView};
+use image::pnm::{PNMSubtype, SampleEncoding};
+use image::{DynamicImage, GenericImageView, ImageBuffer, RgbImage};
 
 use crate::pixel::Gray;
 use crate::pixel::Pixel;
@@ -32,14 +30,16 @@ impl Image {
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdin` is used
     pub fn read(filename: Option<&str>) -> Result<Self, String> {
-        let mut raw_reader: Box<dyn BufRead> = match filename {
-            None => Box::new(BufReader::new(io::stdin())),
-            Some(filename) => Box::new(BufReader::new(fs::File::open(filename).unwrap())),
+        let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
+            None => Box::new(std::io::BufReader::new(std::io::stdin())),
+            Some(filename) => Box::new(std::io::BufReader::new(
+                std::fs::File::open(filename).unwrap(),
+            )),
         };
         let mut buffer = Vec::new();
         // read the whole contents
         raw_reader.read_to_end(&mut buffer).unwrap();
-        let (mut cursor, header) = pnm::PnmDecoder::new(Cursor::new(&buffer[..]))
+        let (mut cursor, header) = pnm::PnmDecoder::new(std::io::Cursor::new(&buffer[..]))
             .expect("Failed to read image format")
             .into_inner();
         // Rewind.
@@ -78,8 +78,7 @@ impl Image {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdout` is used
-    pub fn write(&self, filename: Option<&str>) {
-        todo!();
+    pub fn write(&self, filename: Option<&str>) -> Result<(), String> {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
         // and apparently this should be wrapped in a BufWriter
@@ -89,5 +88,28 @@ impl Image {
         // I do not believe we need to support writing of Pgm images,
         // but it shouldn't be a hard extension
         // (just pattern match on the type of the incoming pixels)
+
+        let mut writer = match filename {
+            Some(filename) => {
+                let filename = std::path::Path::new(filename);
+                Box::new(std::fs::File::create(&filename).unwrap()) as Box<dyn std::io::Write>
+            }
+            None => Box::new(std::io::stdout()) as Box<dyn std::io::Write>,
+        };
+        let pixels = self
+            .pixels
+            .iter()
+            .map(|p| match p {
+                Pixel::Gray(gray) => image::Rgb([gray.value, gray.value, gray.value]),
+                Pixel::Rgb(rgb) => image::Rgb([rgb.red, rgb.green, rgb.blue]),
+            })
+            .collect::<Vec<_>>();
+        let img: RgbImage = ImageBuffer::from_vec(self.width, self.height, pixels).unwrap();
+        let img = DynamicImage::ImageRgb8(img);
+        img.write_to(
+            &mut writer,
+            image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
+        )
+        .map_err(|reason| format!("Failed to write image because {}", reason))
     }
 }
