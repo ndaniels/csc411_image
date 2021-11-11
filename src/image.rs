@@ -1,6 +1,6 @@
 use image::codecs::pnm;
 use image::pnm::{PNMSubtype, SampleEncoding};
-use image::{DynamicImage, GenericImageView, ImageBuffer, RgbImage};
+use image::{DynamicImage, GenericImageView, ImageBuffer};
 
 use crate::pixel::Gray;
 use crate::pixel::Pixel;
@@ -100,12 +100,13 @@ impl Image {
             .pixels
             .iter()
             .map(|p| match p {
-                Pixel::Gray(gray) => image::Rgb([gray.value, gray.value, gray.value]),
-                Pixel::Rgb(rgb) => image::Rgb([rgb.red, rgb.green, rgb.blue]),
+                Pixel::Gray(gray) => vec![gray.value, gray.value, gray.value],
+                Pixel::Rgb(rgb) => vec![rgb.red, rgb.green, rgb.blue],
             })
+            .flatten()
             .collect::<Vec<_>>();
-        let img: RgbImage = ImageBuffer::from_vec(self.width, self.height, pixels).unwrap();
-        let img = DynamicImage::ImageRgb8(img);
+        let img = ImageBuffer::from_vec(self.width, self.height, pixels).unwrap();
+        let img = DynamicImage::ImageRgb16(img);
         img.write_to(
             &mut writer,
             image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
