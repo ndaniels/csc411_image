@@ -105,9 +105,10 @@ impl Image {
                 Pixel::Rgb(rgb) => vec![rgb.red, rgb.green, rgb.blue],
             })
             .flatten()
+            .map(|v| std::cmp::min(v, 255) as u8)
             .collect::<Vec<_>>();
         let img = ImageBuffer::from_vec(self.width, self.height, pixels).unwrap();
-        let img = DynamicImage::ImageRgb16(img);
+        let img = DynamicImage::ImageRgb8(img);
         img.write_to(
             &mut writer,
             image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
