@@ -1,4 +1,3 @@
-use image::ImageResult;
 use image::codecs::pnm;
 use image::pnm::{PNMSubtype, SampleEncoding};
 use image::{DynamicImage, GenericImageView, ImageBuffer};
@@ -79,7 +78,7 @@ impl Image {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdout` is used
-    pub fn write(&self, filename: Option<&str>) -> ImageResult<()> {
+    pub fn write(&self, filename: Option<&str>) -> Result<(), String> {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
         // and apparently this should be wrapped in a BufWriter
@@ -113,6 +112,6 @@ impl Image {
             &mut writer,
             image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
         )
-        // .map_err(|reason| format!("Failed to write image because {}", reason))
+        .map_err(|reason| format!("Failed to write image because {}", reason))
     }
 }
