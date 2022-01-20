@@ -1,10 +1,3 @@
-/// A `Pixel` is an enum over `Gray` and `Rgb` valued pixels
-#[derive(Clone, Debug)]
-pub enum Pixel {
-    Gray(Gray),
-    Rgb(Rgb),
-}
-
 /// A `Gray` pixel contains a single `u16` value indicating brightness
 #[derive(Clone, Debug)]
 pub struct Gray {
