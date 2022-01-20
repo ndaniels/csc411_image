@@ -1,5 +1,4 @@
 mod image;
 mod imgtype;
-
-pub use imgtype::{Gray, Rgb};
-pub use::image::{Read, Write, RgbImage, GrayImage};
+pub use crate::image::{Read, Write, RgbImage, GrayImage};
+pub use crate::imgtype::{Gray, Rgb};
