@@ -9,3 +9,4 @@ description = "A wrapper around the image crate, for CSC 411"
 
 [dependencies]
 image = "0.23.14"
+array2 = {path = "array2"}
