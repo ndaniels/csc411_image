@@ -1,4 +1,8 @@
-
+/// Public enumerator to specify the type of the Image being built
+pub enum ImageType {
+    Gray(Gray),
+    Rgb(Rgb)
+}
 
 /// A `Gray` pixel contains a single `u16` value indicating brightness
 #[derive(Clone, Debug)]

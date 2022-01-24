@@ -4,6 +4,8 @@ use image::{DynamicImage, GenericImageView, ImageBuffer };
 use crate::imgtype::Gray;
 use crate::imgtype::Rgb;
 
+/// A struct containing a vector of RGB pixels,
+/// a width, height, and denominator
 #[derive(Debug)]
 pub struct RgbImage{
     pub pixels: Vec<Rgb>,
@@ -11,6 +13,9 @@ pub struct RgbImage{
     pub height: u32,
     pub denominator: u16
 }
+
+/// A struct containing a vector of Gray pixels,
+/// a width, height, and denominator
 #[derive(Debug)]
 pub struct GrayImage{
     pub pixels: Vec<Gray>,
@@ -19,15 +24,25 @@ pub struct GrayImage{
     pub denominator: u16
 }
 
+/// Behavior that defines reading in a file
+/// returns either a RGB or Gray Image
 pub trait Read<T=Self>{
     fn read(filename: Option<&str>) -> Result<T, String>;
 }
 
+/// Behavior that defines writing an Image 
+// to the local filesystem
 pub trait Write{
     fn write(&self, filename: Option<&str>) -> Result<(), String>;
 }
 
 impl Read for RgbImage{
+    /// Reads an RgbImage from either a filename or stdin
+    ///
+    /// # Arguments
+    ///
+    /// * `filename`: a string containing a path to an image file,
+    ///                 or `None`, in which case `stdin` is used
     fn read(filename: Option<&str>) -> Result<Self, String> {
         let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
             None => Box::new(std::io::BufReader::new(std::io::stdin())),
@@ -69,6 +84,12 @@ impl Read for RgbImage{
 }
 
 impl Write for RgbImage {
+    /// Writes an RgbImage to either a filename or stdout
+    ///
+    /// # Arguments
+    ///
+    /// * `filename`: a string containing a path to an image file,
+    ///                 or `None`, in which case `stdout` is used
     fn write(&self, filename: Option<&str>) -> Result<(), String> {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
@@ -109,6 +130,12 @@ impl Write for RgbImage {
 
 
 impl Read for GrayImage{
+    /// Reads an GrayImage to either a filename or stdout
+    ///
+    /// # Arguments
+    ///
+    /// * `filename`: a string containing a path to an image file,
+    ///                 or `None`, in which case `stdout` is used
     fn read(filename: Option<&str>) -> Result<Self, String> {
         let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
             None => Box::new(std::io::BufReader::new(std::io::stdin())),
@@ -150,8 +177,15 @@ impl Read for GrayImage{
         })
     }
 }
-impl Write for GrayImage {
 
+
+impl Write for GrayImage {
+    /// Writes a GrayImage to either a filename or stdout
+    ///
+    /// # Arguments
+    ///
+    /// * `filename`: a string containing a path to an image file,
+    ///                 or `None`, in which case `stdout` is used
     fn write(&self, filename: Option<&str>) -> Result<(), String> {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
