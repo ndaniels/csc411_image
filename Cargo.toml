@@ -1,6 +1,6 @@
 [package]
 name = "csc411_image"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2018"
 license = "MIT"
 authors = ["Noah Daniels <noah_daniels@uri.edu>", "Najib Ishaq <najib_ishaq@zoho.com>", "Colin O'Connor <colin_oconnor@uri.edu>"]
@@ -9,4 +9,3 @@ description = "A wrapper around the image crate, for CSC 411"
 
 [dependencies]
 image = "0.23.14"
-array2 = {path = "../array2"}
