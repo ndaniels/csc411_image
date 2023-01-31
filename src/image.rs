@@ -1,48 +1,48 @@
-use image::codecs::pnm;
-use image::pnm::{PNMSubtype, SampleEncoding};
-use image::{DynamicImage, GenericImageView, ImageBuffer };
 use crate::imgtype::Gray;
 use crate::imgtype::Rgb;
+use image::codecs::pnm;
+use image::pnm::{PNMSubtype, SampleEncoding};
+use image::{DynamicImage, GenericImageView, ImageBuffer};
 
 /// A struct containing a vector of RGB pixels,
 /// a width, height, and denominator
 #[derive(Debug)]
-pub struct RgbImage{
+pub struct RgbImage {
     pub pixels: Vec<Rgb>,
     pub width: u32,
     pub height: u32,
-    pub denominator: u16
+    pub denominator: u16,
 }
 
 /// A struct containing a vector of Gray pixels,
 /// a width, height, and denominator
 #[derive(Debug)]
-pub struct GrayImage{
+pub struct GrayImage {
     pub pixels: Vec<Gray>,
     pub width: u32,
     pub height: u32,
-    pub denominator: u16
+    pub denominator: u16,
 }
 
 /// Behavior that defines reading in a file
 /// returns either a RGB or Gray Image
-pub trait Read<T=Self>{
+pub trait Read<T = Self> {
     fn read(filename: Option<&str>) -> Result<T, String>;
 }
 
-/// Behavior that defines writing an Image 
+/// Behavior that defines writing an Image
 // to the local filesystem
-pub trait Write{
+pub trait Write {
     fn write(&self, filename: Option<&str>) -> Result<(), String>;
 }
 
-impl Read for RgbImage{
+impl Read for RgbImage {
     /// Reads an RgbImage from either a filename or stdin
     ///
     /// # Arguments
     ///
     /// * `filename`: a string containing a path to an image file,
-    ///                 or `None`, in which case `stdin` is used
+    ///                 or `None`, in which case `stdin` must contain pgm data
     fn read(filename: Option<&str>) -> Result<Self, String> {
         let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
             None => Box::new(std::io::BufReader::new(std::io::stdin())),
@@ -64,21 +64,19 @@ impl Read for RgbImage{
         let pixels: Vec<Rgb> = match img {
             DynamicImage::ImageRgb8(_) => img
                 .pixels()
-                .map(|(_, _, p)| {
-                    Rgb {
-                        red: p[0] as u16,
-                        green: p[1] as u16,
-                        blue: p[2] as u16,
-                    }
+                .map(|(_, _, p)| Rgb {
+                    red: p[0] as u16,
+                    green: p[1] as u16,
+                    blue: p[2] as u16,
                 })
                 .collect(),
             _ => return Err("Unexpected image format".to_string()),
         };
-        Ok(RgbImage{
+        Ok(RgbImage {
             pixels,
             width: img.width(),
             height: img.height(),
-            denominator: header.maximal_sample() as u16
+            denominator: header.maximal_sample() as u16,
         })
     }
 }
@@ -112,9 +110,7 @@ impl Write for RgbImage {
         let pixels = self
             .pixels
             .iter()
-            .map(|p|  {
-                vec![ p.red, p.green, p.blue]
-            })
+            .map(|p| vec![p.red, p.green, p.blue])
             .flatten()
             .map(|v| std::cmp::min(v, 255) as u8)
             .collect::<Vec<_>>();
@@ -128,14 +124,13 @@ impl Write for RgbImage {
     }
 }
 
-
-impl Read for GrayImage{
+impl Read for GrayImage {
     /// Reads an GrayImage to either a filename or stdout
     ///
     /// # Arguments
     ///
     /// * `filename`: a string containing a path to an image file,
-    ///                 or `None`, in which case `stdout` is used
+    ///                 or `None`, in which case `stdin` must contain pgm data
     fn read(filename: Option<&str>) -> Result<Self, String> {
         let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
             None => Box::new(std::io::BufReader::new(std::io::stdin())),
@@ -156,28 +151,25 @@ impl Read for GrayImage{
         let img = DynamicImage::from_decoder(reader).unwrap();
         let pixels: Vec<Gray> = match img {
             DynamicImage::ImageLuma8(_) => img
-            .pixels()
-            .map(|(_, _, p)| Gray { value: p[0] as u16 })
-            .collect(),
+                .pixels()
+                .map(|(_, _, p)| Gray { value: p[0] as u16 })
+                .collect(),
             DynamicImage::ImageRgb8(_) => img
                 .pixels()
-                .map(|(_, _, p)| {
-                    Gray {
-                       value: (p[0] as u16 + p[1] as u16 + p[2] as u16) / 3_u16,
-                    }
+                .map(|(_, _, p)| Gray {
+                    value: (p[0] as u16 + p[1] as u16 + p[2] as u16) / 3_u16,
                 })
                 .collect(),
             _ => return Err("Unexpected image format".to_string()),
         };
-        Ok(GrayImage{
+        Ok(GrayImage {
             pixels,
             width: img.width(),
             height: img.height(),
-            denominator: header.maximal_sample() as u16
+            denominator: header.maximal_sample() as u16,
         })
     }
 }
-
 
 impl Write for GrayImage {
     /// Writes a GrayImage to either a filename or stdout
@@ -208,9 +200,7 @@ impl Write for GrayImage {
         let pixels = self
             .pixels
             .iter()
-            .map(|p|  {
-                vec![ p.value, p.value, p.value]
-            })
+            .map(|p| vec![p.value, p.value, p.value])
             .flatten()
             .map(|v| std::cmp::min(v, 255) as u8)
             .collect::<Vec<_>>();
