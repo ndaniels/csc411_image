@@ -1,0 +1,1 @@
+A simple wrapper around the Image crate for URI's CSC411 class.
