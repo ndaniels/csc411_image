@@ -3,6 +3,7 @@ use crate::imgtype::Rgb;
 use image::codecs::pnm;
 use image::pnm::{PNMSubtype, SampleEncoding};
 use image::{DynamicImage, GenericImageView, ImageBuffer};
+use std::error::Error;
 
 /// A struct containing a vector of RGB pixels,
 /// a width, height, and denominator
@@ -27,13 +28,13 @@ pub struct GrayImage {
 /// Behavior that defines reading in a file
 /// returns either a RGB or Gray Image
 pub trait Read<T = Self> {
-    fn read(filename: Option<&str>) -> Result<T, String>;
+    fn read(filename: Option<&str>) -> Result<T, Box<dyn Error>>;
 }
 
 /// Behavior that defines writing an Image
 // to the local filesystem
 pub trait Write {
-    fn write(&self, filename: Option<&str>) -> Result<(), String>;
+    fn write(&self, filename: Option<&str>) -> Result<(), Box<dyn Error>>;
 }
 
 impl Read for RgbImage {
@@ -43,16 +44,14 @@ impl Read for RgbImage {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdin` must contain pgm data
-    fn read(filename: Option<&str>) -> Result<Self, String> {
+    fn read(filename: Option<&str>) -> Result<Self, Box<dyn Error>> {
         let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
             None => Box::new(std::io::BufReader::new(std::io::stdin())),
-            Some(filename) => Box::new(std::io::BufReader::new(
-                std::fs::File::open(filename).unwrap(),
-            )),
+            Some(filename) => Box::new(std::io::BufReader::new(std::fs::File::open(filename)?)),
         };
         let mut buffer = Vec::new();
         // read the whole contents
-        raw_reader.read_to_end(&mut buffer).unwrap();
+        raw_reader.read_to_end(&mut buffer)?;
         let (mut cursor, header) = pnm::PnmDecoder::new(std::io::Cursor::new(&buffer[..]))
             .expect("Failed to read image format")
             .into_inner();
@@ -60,7 +59,7 @@ impl Read for RgbImage {
         cursor.set_position(0);
         let reader =
             image::codecs::pnm::PnmDecoder::new(cursor).expect("Failed to read image format");
-        let img = DynamicImage::from_decoder(reader).unwrap();
+        let img = DynamicImage::from_decoder(reader)?;
         let pixels: Vec<Rgb> = match img {
             DynamicImage::ImageRgb8(_) => img
                 .pixels()
@@ -70,7 +69,7 @@ impl Read for RgbImage {
                     blue: p[2] as u16,
                 })
                 .collect(),
-            _ => return Err("Unexpected image format".to_string()),
+            _ => return Err("Unexpected image format".to_string().into()),
         };
         Ok(RgbImage {
             pixels,
@@ -88,7 +87,7 @@ impl Write for RgbImage {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdout` is used
-    fn write(&self, filename: Option<&str>) -> Result<(), String> {
+    fn write(&self, filename: Option<&str>) -> Result<(), Box<dyn Error>> {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
         // and apparently this should be wrapped in a BufWriter
@@ -102,7 +101,7 @@ impl Write for RgbImage {
         let mut writer = match filename {
             Some(filename) => {
                 let filename = std::path::Path::new(filename);
-                Box::new(std::fs::File::create(&filename).unwrap()) as Box<dyn std::io::Write>
+                Box::new(std::fs::File::create(filename)?) as Box<dyn std::io::Write>
             }
             None => Box::new(std::io::stdout()) as Box<dyn std::io::Write>,
         };
@@ -110,17 +109,17 @@ impl Write for RgbImage {
         let pixels = self
             .pixels
             .iter()
-            .map(|p| vec![p.red, p.green, p.blue])
-            .flatten()
+            .flat_map(|p| vec![p.red, p.green, p.blue])
             .map(|v| std::cmp::min(v, 255) as u8)
             .collect::<Vec<_>>();
-        let img = ImageBuffer::from_vec(self.width, self.height, pixels).unwrap();
+        let img = ImageBuffer::from_vec(self.width, self.height, pixels)
+            .ok_or("Insufficient buffer size")?;
         let img = DynamicImage::ImageRgb8(img);
         img.write_to(
             &mut writer,
             image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
         )
-        .map_err(|reason| format!("Failed to write image because {}", reason))
+        .map_err(|reason| format!("Failed to write image because {reason}").into())
     }
 }
 
@@ -131,16 +130,14 @@ impl Read for GrayImage {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdin` must contain pgm data
-    fn read(filename: Option<&str>) -> Result<Self, String> {
+    fn read(filename: Option<&str>) -> Result<Self, Box<dyn Error>> {
         let mut raw_reader: Box<dyn std::io::BufRead> = match filename {
             None => Box::new(std::io::BufReader::new(std::io::stdin())),
-            Some(filename) => Box::new(std::io::BufReader::new(
-                std::fs::File::open(filename).unwrap(),
-            )),
+            Some(filename) => Box::new(std::io::BufReader::new(std::fs::File::open(filename)?)),
         };
         let mut buffer = Vec::new();
         // read the whole contents
-        raw_reader.read_to_end(&mut buffer).unwrap();
+        raw_reader.read_to_end(&mut buffer)?;
         let (mut cursor, header) = pnm::PnmDecoder::new(std::io::Cursor::new(&buffer[..]))
             .expect("Failed to read image format")
             .into_inner();
@@ -148,7 +145,7 @@ impl Read for GrayImage {
         cursor.set_position(0);
         let reader =
             image::codecs::pnm::PnmDecoder::new(cursor).expect("Failed to read image format");
-        let img = DynamicImage::from_decoder(reader).unwrap();
+        let img = DynamicImage::from_decoder(reader)?;
         let pixels: Vec<Gray> = match img {
             DynamicImage::ImageLuma8(_) => img
                 .pixels()
@@ -160,7 +157,7 @@ impl Read for GrayImage {
                     value: (p[0] as u16 + p[1] as u16 + p[2] as u16) / 3_u16,
                 })
                 .collect(),
-            _ => return Err("Unexpected image format".to_string()),
+            _ => return Err("Unexpected image format".to_string().into()),
         };
         Ok(GrayImage {
             pixels,
@@ -178,7 +175,7 @@ impl Write for GrayImage {
     ///
     /// * `filename`: a string containing a path to an image file,
     ///                 or `None`, in which case `stdout` is used
-    fn write(&self, filename: Option<&str>) -> Result<(), String> {
+    fn write(&self, filename: Option<&str>) -> Result<(), Box<dyn Error>> {
         // we don't want to rely on file-extension magic,
         // so we should use write_to(&mut bytes, image::ImageOutputFormat::Pnm)
         // and apparently this should be wrapped in a BufWriter
@@ -192,7 +189,7 @@ impl Write for GrayImage {
         let mut writer = match filename {
             Some(filename) => {
                 let filename = std::path::Path::new(filename);
-                Box::new(std::fs::File::create(&filename).unwrap()) as Box<dyn std::io::Write>
+                Box::new(std::fs::File::create(filename)?) as Box<dyn std::io::Write>
             }
             None => Box::new(std::io::stdout()) as Box<dyn std::io::Write>,
         };
@@ -200,16 +197,16 @@ impl Write for GrayImage {
         let pixels = self
             .pixels
             .iter()
-            .map(|p| vec![p.value, p.value, p.value])
-            .flatten()
+            .flat_map(|p| vec![p.value, p.value, p.value])
             .map(|v| std::cmp::min(v, 255) as u8)
             .collect::<Vec<_>>();
-        let img = ImageBuffer::from_vec(self.width, self.height, pixels).unwrap();
+        let img = ImageBuffer::from_vec(self.width, self.height, pixels)
+            .ok_or("Insufficient buffer size")?;
         let img = DynamicImage::ImageRgb8(img);
         img.write_to(
             &mut writer,
             image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
         )
-        .map_err(|reason| format!("Failed to write image because {}", reason))
+        .map_err(|reason| format!("Failed to write image because {reason}").into())
     }
 }
