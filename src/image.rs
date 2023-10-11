@@ -4,6 +4,7 @@ use image::codecs::pnm;
 use image::codecs::pnm::{PnmSubtype, SampleEncoding};
 use image::{DynamicImage, GenericImageView, ImageBuffer};
 use std::error::Error;
+use std::io::Cursor;
 
 /// A struct containing a vector of RGB pixels,
 /// a width, height, and denominator
@@ -115,11 +116,16 @@ impl Write for RgbImage {
         let img = ImageBuffer::from_vec(self.width, self.height, pixels)
             .ok_or("Insufficient buffer size")?;
         let img = DynamicImage::ImageRgb8(img);
+
+        let mut bytes: Vec<u8> = Vec::new();
         img.write_to(
-            &mut writer,
+            &mut Cursor::new(&mut bytes),
             image::ImageOutputFormat::Pnm(PnmSubtype::Pixmap(SampleEncoding::Binary)),
-        )
-        .map_err(|reason| format!("Failed to write image because {reason}").into())
+        )?;
+        // then write bytes to writer
+        writer
+            .write_all(&bytes)
+            .map_err(|reason| format!("Failed to write image because {reason}").into())
     }
 }
 
@@ -203,10 +209,14 @@ impl Write for GrayImage {
         let img = ImageBuffer::from_vec(self.width, self.height, pixels)
             .ok_or("Insufficient buffer size")?;
         let img = DynamicImage::ImageRgb8(img);
+        let mut bytes: Vec<u8> = Vec::new();
         img.write_to(
-            &mut writer,
-            image::ImageOutputFormat::Pnm(PnmSubtype::Pixmap(SampleEncoding::Binary)),
-        )
-        .map_err(|reason| format!("Failed to write image because {reason}").into())
+            &mut Cursor::new(&mut bytes),
+            image::ImageOutputFormat::Pnm(PnmSubtype::Graymap(SampleEncoding::Binary)),
+        )?;
+        // then write bytes to writer
+        writer
+            .write_all(&bytes)
+            .map_err(|reason| format!("Failed to write image because {reason}").into())
     }
 }
