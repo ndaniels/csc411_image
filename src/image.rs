@@ -1,7 +1,7 @@
 use crate::imgtype::Gray;
 use crate::imgtype::Rgb;
 use image::codecs::pnm;
-use image::pnm::{PNMSubtype, SampleEncoding};
+use image::codecs::pnm::{PnmSubtype, SampleEncoding};
 use image::{DynamicImage, GenericImageView, ImageBuffer};
 use std::error::Error;
 
@@ -117,7 +117,7 @@ impl Write for RgbImage {
         let img = DynamicImage::ImageRgb8(img);
         img.write_to(
             &mut writer,
-            image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
+            image::ImageOutputFormat::Pnm(PnmSubtype::Pixmap(SampleEncoding::Binary)),
         )
         .map_err(|reason| format!("Failed to write image because {reason}").into())
     }
@@ -205,7 +205,7 @@ impl Write for GrayImage {
         let img = DynamicImage::ImageRgb8(img);
         img.write_to(
             &mut writer,
-            image::ImageOutputFormat::Pnm(PNMSubtype::Pixmap(SampleEncoding::Binary)),
+            image::ImageOutputFormat::Pnm(PnmSubtype::Pixmap(SampleEncoding::Binary)),
         )
         .map_err(|reason| format!("Failed to write image because {reason}").into())
     }
