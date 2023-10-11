@@ -124,7 +124,7 @@ impl Write for RgbImage {
 }
 
 impl Read for GrayImage {
-    /// Reads an GrayImage to either a filename or stdout
+    /// Reads an GrayImage from either a filename or stdin
     ///
     /// # Arguments
     ///
